@@ -3,6 +3,7 @@ package com.example.whatsapp_status_saver.fragment
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,7 +14,6 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.Settings
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,7 +24,9 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.documentfile.provider.DocumentFile
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.whatsapp_status_saver.AppPref
 import com.example.whatsapp_status_saver.R
@@ -33,7 +35,9 @@ import com.example.whatsapp_status_saver.adapters.ImageAdapter
 import com.example.whatsapp_status_saver.databinding.FragmentImageBinding
 import com.example.whatsapp_status_saver.model.IVModel
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.*
 import java.io.File
+
 
 class ImageFragment : Fragment() {
 
@@ -46,10 +50,11 @@ class ImageFragment : Fragment() {
     private var isWritePermissionGranted = false
     private lateinit var dialog: Dialog
     private lateinit var btnFolderPermission: Button
+    private lateinit var job: Job
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         binding = FragmentImageBinding.inflate(inflater, container, false)
         appPref = AppPref(requireContext())
@@ -108,9 +113,11 @@ class ImageFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        fetchStatus()
+//        fetchStatus()
+//        requestPermission()
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun requestPermission(){
 //        val isReadPermission = ContextCompat.checkSelfPermission(
 //            requireContext(),
@@ -124,6 +131,10 @@ class ImageFragment : Fragment() {
 
 //        isReadPermissionGranted = isReadPermission
         isWritePermissionGranted = isWritePermission || sdkCheck()
+        if (isWritePermissionGranted){
+            fetchStatus()
+            return
+        }
 
         val permissionRequest = mutableListOf<String>()
         if (!isWritePermissionGranted){
@@ -173,7 +184,8 @@ class ImageFragment : Fragment() {
                 }
             }
             else{
-                getFolderPermission()
+//                getFolderPermission()
+                openDirectory()
             }
 //            getStatusAccess()
         }else{
@@ -217,6 +229,37 @@ class ImageFragment : Fragment() {
             }
         }
         dialog.dismiss()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun openDirectory() {
+        GlobalScope.launch(Dispatchers.Main){
+            dialog.show()
+        }
+        val path = Environment.getExternalStorageDirectory()
+            .toString() + "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses"
+        val file = File(path)
+        var secondDir: String
+        val finalDirPath: String
+        val startDir: String = "Android%2Fmedia%2Fcom.whatsapp%2FWhatsApp%2FMedia%2F.Statuses"
+//        if (file.exists()) {
+//        }
+        val sm = requireContext().getSystemService(Context.STORAGE_SERVICE) as StorageManager?
+        val intent = sm!!.primaryStorageVolume.createOpenDocumentTreeIntent()
+        var uri = intent.getParcelableExtra<Uri>("android.provider.extra.INITIAL_URI")
+        var scheme = uri.toString()
+        Log.d("TAG", "INITIAL_URI scheme: $scheme")
+        scheme = scheme.replace("/root/", "/document/")
+        finalDirPath = "$scheme%3A$startDir"
+        uri = Uri.parse(finalDirPath)
+        intent.putExtra("android.provider.extra.INITIAL_URI", uri)
+        Log.d("TAG", "uri: $uri")
+        try {
+            btnFolderPermission.setOnClickListener {
+                startActivityForResult(intent,1234)
+            }
+        } catch (ignored: ActivityNotFoundException) {
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -313,20 +356,6 @@ class ImageFragment : Fragment() {
         val staggeredGridLayoutManager =
             StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
         binding.rvImage.layoutManager = staggeredGridLayoutManager
-//        Utils.imageList = Utils.imageList.filter {
-//            it.uri.toString().endsWith(".jpg")
-//        }.toMutableList()
-//        val images = mutableListOf<IVModel>()
-//        images.addAll(Utils.filesList)
-//        Log.d("CLEAR","original: ${images.size}")
-//        Utils.imageList.clear()
-//        for (image in images){
-//            if (image.uri.toString().endsWith(".jpg")){
-//                Utils.imageList.add(image)
-//            }
-//        }
-        Log.d("CLEAR","after ${Utils.imageList.size}")
-//        images.filter { !it.uri.toString().endsWith(".mp4") }
         adapter = ImageAdapter(requireContext(), Utils.imageList)
         binding.rvImage.adapter = adapter
         adapter.notifyDataSetChanged()

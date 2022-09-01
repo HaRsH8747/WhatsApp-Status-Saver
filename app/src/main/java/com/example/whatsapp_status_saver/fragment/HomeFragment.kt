@@ -3,6 +3,7 @@ package com.example.whatsapp_status_saver.fragment
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -34,6 +35,10 @@ import com.example.whatsapp_status_saver.adapters.HomeAdapter
 import com.example.whatsapp_status_saver.databinding.FragmentHomeBinding
 import com.example.whatsapp_status_saver.model.IVModel
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.io.File
 
 class HomeFragment : Fragment() {
@@ -93,6 +98,7 @@ class HomeFragment : Fragment() {
 //            fetchStatus()
 //            setUpLayout()
 //            adapter.updateList(getData())
+//            requestPermission()
             requestPermission()
             binding.srlHome.isRefreshing = false
         }
@@ -115,9 +121,11 @@ class HomeFragment : Fragment() {
 //                Manifest.permission.WRITE_EXTERNAL_STORAGE
 //            ) == PackageManager.PERMISSION_GRANTED
 //        }
-        fetchStatus()
+//        fetchStatus()
+//        requestPermission()
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun requestPermission(){
 //        val isReadPermission = ContextCompat.checkSelfPermission(
 //            requireContext(),
@@ -131,6 +139,10 @@ class HomeFragment : Fragment() {
 
 //        isReadPermissionGranted = isReadPermission
         isWritePermissionGranted = isWritePermission || sdkCheck()
+        if (isWritePermissionGranted){
+            fetchStatus()
+            return
+        }
 
         val permissionRequest = mutableListOf<String>()
         if (!isWritePermissionGranted){
@@ -177,7 +189,8 @@ class HomeFragment : Fragment() {
                     }
                 }
             }else{
-                getFolderPermission()
+//                getFolderPermission()
+                openDirectory()
             }
 //            getStatusAccess()
         }else{
@@ -190,6 +203,35 @@ class HomeFragment : Fragment() {
                 binding.tvEmptyHome.visibility = View.INVISIBLE
                 setUpLayout()
             }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun openDirectory() {
+        dialog.show()
+        val path = Environment.getExternalStorageDirectory()
+            .toString() + "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses"
+        val file = File(path)
+        var secondDir: String
+        val finalDirPath: String
+        val startDir: String = "Android%2Fmedia%2Fcom.whatsapp%2FWhatsApp%2FMedia%2F.Statuses"
+//        if (file.exists()) {
+//        }
+        val sm = requireContext().getSystemService(Context.STORAGE_SERVICE) as StorageManager?
+        val intent = sm!!.primaryStorageVolume.createOpenDocumentTreeIntent()
+        var uri = intent.getParcelableExtra<Uri>("android.provider.extra.INITIAL_URI")
+        var scheme = uri.toString()
+        Log.d("TAG", "INITIAL_URI scheme: $scheme")
+        scheme = scheme.replace("/root/", "/document/")
+        finalDirPath = "$scheme%3A$startDir"
+        uri = Uri.parse(finalDirPath)
+        intent.putExtra("android.provider.extra.INITIAL_URI", uri)
+        Log.d("TAG", "uri: $uri")
+        try {
+            btnFolderPermission.setOnClickListener {
+                startActivityForResult(intent,1234)
+            }
+        } catch (ignored: ActivityNotFoundException) {
         }
     }
 

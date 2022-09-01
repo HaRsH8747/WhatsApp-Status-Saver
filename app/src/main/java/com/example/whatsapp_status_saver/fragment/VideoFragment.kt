@@ -3,6 +3,7 @@ package com.example.whatsapp_status_saver.fragment
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -35,6 +36,7 @@ import com.example.whatsapp_status_saver.databinding.FragmentImageBinding
 import com.example.whatsapp_status_saver.databinding.FragmentVideoBinding
 import com.example.whatsapp_status_saver.model.IVModel
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.*
 import java.io.File
 
 class VideoFragment : Fragment() {
@@ -93,6 +95,7 @@ class VideoFragment : Fragment() {
 //            val images = getData()
 //            images.filter { it.uri.toString().endsWith(".jpg") }
             requestPermission()
+//            requestPermission()
 //            adapter.updateList(images)
             binding.srlVideo.isRefreshing = false
         }
@@ -110,9 +113,10 @@ class VideoFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        fetchStatus()
+//        requestPermission()
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun requestPermission(){
 //        val isReadPermission = ContextCompat.checkSelfPermission(
 //            requireContext(),
@@ -126,6 +130,10 @@ class VideoFragment : Fragment() {
 
 //        isReadPermissionGranted = isReadPermission
         isWritePermissionGranted = isWritePermission || sdkCheck()
+        if (isWritePermissionGranted){
+            fetchStatus()
+            return
+        }
 
         val permissionRequest = mutableListOf<String>()
         if (!isWritePermissionGranted){
@@ -176,7 +184,8 @@ class VideoFragment : Fragment() {
                 }
             }
             else{
-                getFolderPermission()
+//                getFolderPermission()
+                openDirectory()
             }
 //            getStatusAccess()
         }else{
@@ -220,6 +229,35 @@ class VideoFragment : Fragment() {
             }
         }
         dialog.dismiss()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun openDirectory() {
+        dialog.show()
+        val path = Environment.getExternalStorageDirectory()
+            .toString() + "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses"
+        val file = File(path)
+        var secondDir: String
+        val finalDirPath: String
+        val startDir: String = "Android%2Fmedia%2Fcom.whatsapp%2FWhatsApp%2FMedia%2F.Statuses"
+//        if (file.exists()) {
+//        }
+        val sm = requireContext().getSystemService(Context.STORAGE_SERVICE) as StorageManager?
+        val intent = sm!!.primaryStorageVolume.createOpenDocumentTreeIntent()
+        var uri = intent.getParcelableExtra<Uri>("android.provider.extra.INITIAL_URI")
+        var scheme = uri.toString()
+        Log.d("TAG", "INITIAL_URI scheme: $scheme")
+        scheme = scheme.replace("/root/", "/document/")
+        finalDirPath = "$scheme%3A$startDir"
+        uri = Uri.parse(finalDirPath)
+        intent.putExtra("android.provider.extra.INITIAL_URI", uri)
+        Log.d("TAG", "uri: $uri")
+        try {
+            btnFolderPermission.setOnClickListener {
+                startActivityForResult(intent,1234)
+            }
+        } catch (ignored: ActivityNotFoundException) {
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
