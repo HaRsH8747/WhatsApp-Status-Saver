@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.whatsapp_status_saver.AppPref
 import com.example.whatsapp_status_saver.R
@@ -89,12 +90,27 @@ class ImageFragment : Fragment() {
             }
 //            isWritePermissionGranted = permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] ?: isWritePermissionGranted
         }
-        requestPermission()
+
+        job = GlobalScope.launch(Dispatchers.IO){
+            requestPermission()
+        }
+
+//        lifecycleScope.launch {
+//            requestPermission()
+//        }
 
         binding.srlImage.setOnRefreshListener {
 //            val images = getData()
 //            images.filter { it.uri.toString().endsWith(".jpg") }
-            requestPermission()
+            Log.d("CLEAR","Image job: ${job.isActive}")
+            if (!job.isActive){
+                job = GlobalScope.launch(Dispatchers.IO){
+                    requestPermission()
+                }
+            }
+//            lifecycleScope.launch {
+//                requestPermission()
+//            }
 //            adapter.updateList(images)
             binding.srlImage.isRefreshing = false
         }
@@ -117,8 +133,16 @@ class ImageFragment : Fragment() {
 //        requestPermission()
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (job.isActive){
+            job.cancel()
+            Log.d("CLEAR","Image job canceled")
+        }
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
-    private fun requestPermission(){
+    private suspend fun requestPermission(){
 //        val isReadPermission = ContextCompat.checkSelfPermission(
 //            requireContext(),
 //            Manifest.permission.READ_EXTERNAL_STORAGE
@@ -132,7 +156,9 @@ class ImageFragment : Fragment() {
 //        isReadPermissionGranted = isReadPermission
         isWritePermissionGranted = isWritePermission || sdkCheck()
         if (isWritePermissionGranted){
-            fetchStatus()
+            withContext(Dispatchers.IO){
+                fetchStatus()
+            }
             return
         }
 
@@ -155,7 +181,7 @@ class ImageFragment : Fragment() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
     }
 
-    private fun fetchStatus(){
+    private suspend fun fetchStatus(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             val result = readDataFromPrefs()
             if (result){
@@ -176,9 +202,13 @@ class ImageFragment : Fragment() {
                     }.toMutableList()
                     Utils.imageList.sortByDescending { it.lastModified }
                     if (Utils.imageList.size == 0){
-                        binding.tvEmptyImage.visibility = View.VISIBLE
+                        withContext(Dispatchers.Main){
+                            binding.tvEmptyImage.visibility = View.VISIBLE
+                        }
                     }else{
-                        binding.tvEmptyImage.visibility = View.INVISIBLE
+                        withContext(Dispatchers.Main){
+                            binding.tvEmptyImage.visibility = View.INVISIBLE
+                        }
                         setUpLayout()
                     }
                 }
@@ -195,9 +225,13 @@ class ImageFragment : Fragment() {
                 it.uri.toString().endsWith(".jpg")
             }.toMutableList()
             if (Utils.imageList.size == 0){
-                binding.tvEmptyImage.visibility = View.VISIBLE
+                withContext(Dispatchers.Main){
+                    binding.tvEmptyImage.visibility = View.VISIBLE
+                }
             }else{
-                binding.tvEmptyImage.visibility = View.INVISIBLE
+                withContext(Dispatchers.Main){
+                    binding.tvEmptyImage.visibility = View.INVISIBLE
+                }
                 setUpLayout()
             }
         }
@@ -205,8 +239,8 @@ class ImageFragment : Fragment() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        dialog.dismiss()
         if (resultCode == AppCompatActivity.RESULT_OK && resultCode == 1234){
-            dialog.dismiss()
             val treeUri = data?.data
             Log.d("CLEAR","path: ${treeUri.toString()}")
             appPref.setString(AppPref.PATH,treeUri.toString())
@@ -221,19 +255,22 @@ class ImageFragment : Fragment() {
                     }
                 }
                 if (Utils.imageList.size == 0){
-                    binding.tvEmptyImage.visibility = View.VISIBLE
+                    lifecycleScope.launch {
+                        binding.tvEmptyImage.visibility = View.VISIBLE
+                    }
                 }else{
-                    binding.tvEmptyImage.visibility = View.INVISIBLE
-                    setUpLayout()
+                    lifecycleScope.launch {
+                        binding.tvEmptyImage.visibility = View.INVISIBLE
+                        setUpLayout()
+                    }
                 }
             }
         }
-        dialog.dismiss()
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun openDirectory() {
-        GlobalScope.launch(Dispatchers.Main){
+    suspend fun openDirectory() {
+        withContext(Dispatchers.Main){
             dialog.show()
         }
         val path = Environment.getExternalStorageDirectory()
@@ -351,13 +388,20 @@ class ImageFragment : Fragment() {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private fun setUpLayout() {
-        binding.rvImage.setHasFixedSize(true)
-        val staggeredGridLayoutManager =
-            StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
-        binding.rvImage.layoutManager = staggeredGridLayoutManager
-        adapter = ImageAdapter(requireContext(), Utils.imageList)
-        binding.rvImage.adapter = adapter
-        adapter.notifyDataSetChanged()
+    private suspend fun setUpLayout() {
+        withContext(Dispatchers.Main){
+            binding.rvImage.setHasFixedSize(true)
+            val staggeredGridLayoutManager =
+                StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
+            binding.rvImage.layoutManager = staggeredGridLayoutManager
+            val imageList: MutableList<IVModel> = mutableListOf()
+            imageList.addAll(Utils.imageList)
+            adapter = ImageAdapter(requireContext(), imageList)
+            binding.rvImage.adapter = adapter
+            Log.d("CLEAR","image size: ${Utils.imageList.size}")
+            if (job.isActive){
+                adapter.notifyDataSetChanged()
+            }
+        }
     }
 }

@@ -26,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.whatsapp_status_saver.AppPref
 import com.example.whatsapp_status_saver.R
@@ -50,6 +51,7 @@ class VideoFragment : Fragment() {
     private var isWritePermissionGranted = false
     private lateinit var dialog: Dialog
     private lateinit var btnFolderPermission: Button
+    private lateinit var job: Job
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -89,12 +91,19 @@ class VideoFragment : Fragment() {
 //            isWritePermissionGranted = permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] ?: isWritePermissionGranted
         }
 
-        requestPermission()
+        job = GlobalScope.launch(Dispatchers.IO){
+            requestPermission()
+        }
 
         binding.srlVideo.setOnRefreshListener {
 //            val images = getData()
 //            images.filter { it.uri.toString().endsWith(".jpg") }
-            requestPermission()
+            Log.d("CLEAR","Video job: ${job.isActive}")
+            if (!job.isActive){
+                job = GlobalScope.launch(Dispatchers.IO){
+                    requestPermission()
+                }
+            }
 //            requestPermission()
 //            adapter.updateList(images)
             binding.srlVideo.isRefreshing = false
@@ -116,8 +125,16 @@ class VideoFragment : Fragment() {
 //        requestPermission()
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (job.isActive){
+            job.cancel()
+            Log.d("CLEAR","Video job canceled")
+        }
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
-    private fun requestPermission(){
+    private suspend fun requestPermission(){
 //        val isReadPermission = ContextCompat.checkSelfPermission(
 //            requireContext(),
 //            Manifest.permission.READ_EXTERNAL_STORAGE
@@ -131,7 +148,9 @@ class VideoFragment : Fragment() {
 //        isReadPermissionGranted = isReadPermission
         isWritePermissionGranted = isWritePermission || sdkCheck()
         if (isWritePermissionGranted){
-            fetchStatus()
+            withContext(Dispatchers.IO){
+                fetchStatus()
+            }
             return
         }
 
@@ -154,7 +173,7 @@ class VideoFragment : Fragment() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
     }
 
-    private fun fetchStatus(){
+    private suspend fun fetchStatus(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             val result = readDataFromPrefs()
             if (result){
@@ -176,9 +195,13 @@ class VideoFragment : Fragment() {
                     }.toMutableList()
                     Utils.videoList.sortByDescending { it.lastModified }
                     if (Utils.videoList.size == 0){
-                        binding.tvEmptyVideo.visibility = View.VISIBLE
+                        withContext(Dispatchers.Main){
+                            binding.tvEmptyVideo.visibility = View.VISIBLE
+                        }
                     }else{
-                        binding.tvEmptyVideo.visibility = View.INVISIBLE
+                        withContext(Dispatchers.Main){
+                            binding.tvEmptyVideo.visibility = View.INVISIBLE
+                        }
                         setUpLayout()
                     }
                 }
@@ -195,9 +218,13 @@ class VideoFragment : Fragment() {
                 it.uri.toString().endsWith(".mp4")
             }.toMutableList()
             if (Utils.videoList.size == 0){
-                binding.tvEmptyVideo.visibility = View.VISIBLE
+                withContext(Dispatchers.Main){
+                    binding.tvEmptyVideo.visibility = View.VISIBLE
+                }
             }else{
-                binding.tvEmptyVideo.visibility = View.INVISIBLE
+                withContext(Dispatchers.Main){
+                    binding.tvEmptyVideo.visibility = View.INVISIBLE
+                }
                 setUpLayout()
             }
         }
@@ -205,8 +232,8 @@ class VideoFragment : Fragment() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        dialog.dismiss()
         if (resultCode == AppCompatActivity.RESULT_OK && resultCode == 1234){
-            dialog.dismiss()
             val treeUri = data?.data
             Log.d("CLEAR","path: ${treeUri.toString()}")
             appPref.setString(AppPref.PATH,treeUri.toString())
@@ -221,19 +248,24 @@ class VideoFragment : Fragment() {
                     }
                 }
                 if (Utils.videoList.size == 0){
-                    binding.tvEmptyVideo.visibility = View.VISIBLE
+                    lifecycleScope.launch {
+                        binding.tvEmptyVideo.visibility = View.VISIBLE
+                    }
                 }else{
-                    binding.tvEmptyVideo.visibility = View.INVISIBLE
-                    setUpLayout()
+                    lifecycleScope.launch {
+                        binding.tvEmptyVideo.visibility = View.INVISIBLE
+                        setUpLayout()
+                    }
                 }
             }
         }
-        dialog.dismiss()
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun openDirectory() {
-        dialog.show()
+    suspend fun openDirectory() {
+        withContext(Dispatchers.Main){
+            dialog.show()
+        }
         val path = Environment.getExternalStorageDirectory()
             .toString() + "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses"
         val file = File(path)
@@ -312,22 +344,20 @@ class VideoFragment : Fragment() {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private fun setUpLayout() {
-        binding.rvVideo.setHasFixedSize(true)
-        val staggeredGridLayoutManager =
-            StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
-        binding.rvVideo.layoutManager = staggeredGridLayoutManager
-//        val videos = mutableListOf<IVModel>()
-//        videos.addAll(Utils.videoList)
-//        for (video in videos){
-//            if (video.uri.toString().endsWith(".mp4")){
-//                Utils.videoList.add(video)
-//            }
-//        }
-//        images.filter { !it.uri.toString().endsWith(".mp4") }
-        Log.d("CLEAR","after ${Utils.videoList.size}")
-        adapter = VideoAdapter(requireContext(), Utils.videoList)
-        binding.rvVideo.adapter = adapter
-        adapter.notifyDataSetChanged()
+    private suspend fun setUpLayout() {
+        withContext(Dispatchers.Main){
+            binding.rvVideo.setHasFixedSize(true)
+            val staggeredGridLayoutManager =
+                StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
+            binding.rvVideo.layoutManager = staggeredGridLayoutManager
+            val videoList: MutableList<IVModel> = mutableListOf()
+            videoList.addAll(Utils.videoList)
+            adapter = VideoAdapter(requireContext(), videoList)
+            binding.rvVideo.adapter = adapter
+            Log.d("CLEAR","image size: ${Utils.videoList.size}")
+            if (job.isActive){
+                adapter.notifyDataSetChanged()
+            }
+        }
     }
 }

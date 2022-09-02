@@ -41,7 +41,7 @@
                 android:layout_marginTop="20dp"
                 android:fontFamily="@font/rc_regular"
                 android:lineSpacingExtra="5dp"
-                android:text="To give access to all the whatsapp status. It is necessary to provide Whatsapp '.Status' folder permission externally.\n Goto:- Android -> media -> com.whatsapp -> WhatsApp -> Media -> .Statuses (Enable show hidden files to see .Statuses folder)).\nPress 'Use this folder' and gives access to the folder."
+                android:text="To give access to all the whatsapp status. It is necessary to provide Whatsapp '.Status' folder permission externally.\n\nPress 'Use this folder' and gives access to the folder."
                 android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@+id/textView2"

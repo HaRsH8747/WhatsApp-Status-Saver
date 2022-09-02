@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.PathUtils
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.whatsapp_status_saver.AppPref
 import com.example.whatsapp_status_saver.R
@@ -35,10 +36,7 @@ import com.example.whatsapp_status_saver.adapters.HomeAdapter
 import com.example.whatsapp_status_saver.databinding.FragmentHomeBinding
 import com.example.whatsapp_status_saver.model.IVModel
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.File
 
 class HomeFragment : Fragment() {
@@ -52,6 +50,7 @@ class HomeFragment : Fragment() {
     private lateinit var permissionLauncher: ActivityResultLauncher<String>
     private var isReadPermissionGranted = false
     private var isWritePermissionGranted = false
+    private lateinit var job: Job
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -91,7 +90,9 @@ class HomeFragment : Fragment() {
 //            isWritePermissionGranted = permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] ?: isWritePermissionGranted
         }
 
-        requestPermission()
+        job = GlobalScope.launch(Dispatchers.IO){
+            requestPermission()
+        }
 //        fetchStatus()
 
         binding.srlHome.setOnRefreshListener {
@@ -99,7 +100,12 @@ class HomeFragment : Fragment() {
 //            setUpLayout()
 //            adapter.updateList(getData())
 //            requestPermission()
-            requestPermission()
+            Log.d("CLEAR","Home job: ${job.isActive}")
+            if (!job.isActive){
+                job = GlobalScope.launch(Dispatchers.IO){
+                    requestPermission()
+                }
+            }
             binding.srlHome.isRefreshing = false
         }
 
@@ -111,6 +117,14 @@ class HomeFragment : Fragment() {
             requireContext().startActivity(Intent(str, Uri.parse(sb2.toString())))
         }
         return binding.root
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (job.isActive){
+            job.cancel()
+            Log.d("CLEAR","Home job canceled")
+        }
     }
 
     override fun onResume() {
@@ -126,7 +140,7 @@ class HomeFragment : Fragment() {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private fun requestPermission(){
+    private suspend fun requestPermission(){
 //        val isReadPermission = ContextCompat.checkSelfPermission(
 //            requireContext(),
 //            Manifest.permission.READ_EXTERNAL_STORAGE
@@ -140,7 +154,9 @@ class HomeFragment : Fragment() {
 //        isReadPermissionGranted = isReadPermission
         isWritePermissionGranted = isWritePermission || sdkCheck()
         if (isWritePermissionGranted){
-            fetchStatus()
+            withContext(Dispatchers.IO){
+                fetchStatus()
+            }
             return
         }
 
@@ -164,13 +180,12 @@ class HomeFragment : Fragment() {
     }
 
 
-    private fun fetchStatus(){
+    private suspend fun fetchStatus(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             val result = readDataFromPrefs()
             if (result){
                 val uriPath = appPref.getString(AppPref.PATH)
                 requireContext().contentResolver.takePersistableUriPermission(Uri.parse(uriPath), Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                Log.d("CLEAR","result")
                 Utils.filesList.clear()
                 if (uriPath != null){
                     val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, Uri.parse(uriPath))
@@ -182,9 +197,13 @@ class HomeFragment : Fragment() {
                     }
                     Utils.filesList.sortByDescending { it.lastModified }
                     if (Utils.filesList.size == 0){
-                        binding.tvEmptyHome.visibility = View.VISIBLE
+                        withContext(Dispatchers.Main){
+                            binding.tvEmptyHome.visibility = View.VISIBLE
+                        }
                     }else{
-                        binding.tvEmptyHome.visibility = View.INVISIBLE
+                        withContext(Dispatchers.Main){
+                            binding.tvEmptyHome.visibility = View.INVISIBLE
+                        }
                         setUpLayout()
                     }
                 }
@@ -198,17 +217,23 @@ class HomeFragment : Fragment() {
             Utils.filesList.clear()
             Utils.filesList = getData()
             if (Utils.filesList.size == 0){
-                binding.tvEmptyHome.visibility = View.VISIBLE
+                withContext(Dispatchers.Main){
+                    binding.tvEmptyHome.visibility = View.VISIBLE
+                }
             }else{
-                binding.tvEmptyHome.visibility = View.INVISIBLE
+                withContext(Dispatchers.Main){
+                    binding.tvEmptyHome.visibility = View.INVISIBLE
+                }
                 setUpLayout()
             }
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    fun openDirectory() {
-        dialog.show()
+    suspend fun openDirectory() {
+        withContext(Dispatchers.Main){
+            dialog.show()
+        }
         val path = Environment.getExternalStorageDirectory()
             .toString() + "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses"
         val file = File(path)
@@ -226,7 +251,7 @@ class HomeFragment : Fragment() {
         finalDirPath = "$scheme%3A$startDir"
         uri = Uri.parse(finalDirPath)
         intent.putExtra("android.provider.extra.INITIAL_URI", uri)
-        Log.d("TAG", "uri: $uri")
+        Log.d("CLEAR", "uri: $uri")
         try {
             btnFolderPermission.setOnClickListener {
                 startActivityForResult(intent,1234)
@@ -237,8 +262,8 @@ class HomeFragment : Fragment() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        dialog.dismiss()
         if (resultCode == AppCompatActivity.RESULT_OK && requestCode == 1234){
-            dialog.dismiss()
             val treeUri = data?.data
             Log.d("CLEAR","path: ${treeUri.toString()}")
             appPref.setString(AppPref.PATH,treeUri.toString())
@@ -253,14 +278,17 @@ class HomeFragment : Fragment() {
                     }
                 }
                 if (Utils.filesList.size == 0){
-                    binding.tvEmptyHome.visibility = View.VISIBLE
+                    lifecycleScope.launch {
+                        binding.tvEmptyHome.visibility = View.VISIBLE
+                    }
                 }else{
-                    binding.tvEmptyHome.visibility = View.INVISIBLE
-                    setUpLayout()
+                    lifecycleScope.launch {
+                        binding.tvEmptyHome.visibility = View.INVISIBLE
+                        setUpLayout()
+                    }
                 }
             }
         }
-        dialog.dismiss()
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -315,13 +343,20 @@ class HomeFragment : Fragment() {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private fun setUpLayout() {
-        binding.rvHome.setHasFixedSize(true)
-        val staggeredGridLayoutManager =
+    private suspend fun setUpLayout() {
+        withContext(Dispatchers.Main){
+            binding.rvHome.setHasFixedSize(true)
+            val staggeredGridLayoutManager =
             StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
-        binding.rvHome.layoutManager = staggeredGridLayoutManager
-        adapter = HomeAdapter(requireContext(), Utils.filesList)
-        binding.rvHome.adapter = adapter
-        adapter.notifyDataSetChanged()
+            binding.rvHome.layoutManager = staggeredGridLayoutManager
+            val fileList: MutableList<IVModel> = mutableListOf()
+            fileList.addAll(Utils.filesList)
+            adapter = HomeAdapter(requireContext(), fileList)
+            binding.rvHome.adapter = adapter
+            Log.d("CLEAR","image size: ${Utils.filesList.size}")
+            if (job.isActive){
+                adapter.notifyDataSetChanged()
+            }
+        }
     }
 }
