@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/srlHome"
@@ -21,7 +20,7 @@
             android:layout_marginTop="20dp"
             android:fontFamily="@font/rc_regular"
             android:gravity="center_horizontal"
-            android:text="Home"
+            android:text="@string/home"
             android:textSize="22sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -35,6 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="20dp"
             android:layout_marginBottom="6dp"
+            android:contentDescription="@string/rating_button"
             android:src="@drawable/ic_baseline_star_rate_24"
             app:layout_constraintBottom_toBottomOf="@+id/textView"
             app:layout_constraintEnd_toEndOf="parent"
@@ -53,14 +53,14 @@
 
         <TextView
             android:id="@+id/tvEmptyHome"
+            style="@style/CustomText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/rc_bold"
+            android:text="@string/no_status_available_n_watch_some_statuses_amp_come_back_again"
             android:textAlignment="center"
-            android:visibility="invisible"
-            style="@style/CustomText"
             android:textSize="18sp"
-            android:text="No Status available.\n Watch some statuses &amp; come back again."
+            android:visibility="invisible"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

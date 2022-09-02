@@ -10,8 +10,8 @@
         android:id="@+id/viewpager2"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="30dp"
-        android:layout_above="@+id/bottomAppBar" />
+        android:layout_above="@+id/bottomAppBar"
+        android:layout_marginBottom="30dp" />
 
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottomAppBar"
@@ -38,6 +38,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:backgroundTint="#1FAF38"
+        android:contentDescription="@string/home_button"
         android:src="@drawable/home"
         app:layout_anchor="@id/bottomAppBar"
         app:maxImageSize="35dp">

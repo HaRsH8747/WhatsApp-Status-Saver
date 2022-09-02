@@ -21,6 +21,7 @@
             android:layout_width="35dp"
             android:layout_height="35dp"
             android:layout_marginStart="15dp"
+            android:contentDescription="@string/back_button"
             android:src="@drawable/back"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -31,7 +32,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/rc_regular"
-            android:text="Video"
+            android:text="@string/video"
             android:textColor="@color/black"
             android:textSize="24sp"
             android:textStyle="bold"
@@ -45,8 +46,8 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/main_bg"
         android:layout_below="@id/constraintLayout"
+        android:background="@color/main_bg"
         android:padding="5dp">
 
         <RelativeLayout
@@ -64,7 +65,7 @@
                 android:layout_centerInParent="true"
                 android:layout_gravity="center"
                 android:layout_marginBottom="5dp"
-                android:fitsSystemWindows="true"/>
+                android:fitsSystemWindows="true" />
 
 
         </RelativeLayout>
@@ -84,8 +85,9 @@
                 android:layout_gravity="center"
                 android:layout_margin="5dp"
                 android:layout_weight="1"
-                app:tint="@color/black"
-                android:src="@drawable/unfilled_fav"/>
+                android:contentDescription="@string/favourite_button"
+                android:src="@drawable/unfilled_fav"
+                app:tint="@color/black" />
 
             <ImageView
                 android:id="@+id/download"
@@ -94,17 +96,19 @@
                 android:layout_gravity="center"
                 android:layout_margin="5dp"
                 android:layout_weight="1"
-                app:tint="@color/black"
-                android:src="@drawable/download"/>
+                android:contentDescription="@string/download_button"
+                android:src="@drawable/download"
+                app:tint="@color/black" />
 
             <ImageView
                 android:id="@+id/share"
                 android:layout_width="wrap_content"
                 android:layout_height="35dp"
-                android:layout_margin="5dp"
                 android:layout_gravity="center"
+                android:layout_margin="5dp"
                 android:layout_weight="1"
-                android:src="@drawable/share_1"/>
+                android:contentDescription="@string/share_button"
+                android:src="@drawable/share_1" />
 
         </LinearLayout>
     </RelativeLayout>
