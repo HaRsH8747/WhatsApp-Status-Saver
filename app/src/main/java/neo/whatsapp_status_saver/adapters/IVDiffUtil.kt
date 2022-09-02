@@ -1,7 +1,7 @@
-package com.example.whatsapp_status_saver.adapters
+package neo.whatsapp_status_saver.adapters
 
 import androidx.recyclerview.widget.DiffUtil
-import com.example.whatsapp_status_saver.model.IVModel
+import neo.whatsapp_status_saver.model.IVModel
 
 class IVDiffUtil(
     private val oldList: List<IVModel>,

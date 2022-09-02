@@ -1,4 +1,4 @@
-package com.example.whatsapp_status_saver.fragment
+package neo.whatsapp_status_saver.fragment
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -14,6 +14,7 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.Settings
 import android.util.Log
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,39 +25,38 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.PathUtils
 import androidx.documentfile.provider.DocumentFile
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.example.whatsapp_status_saver.AppPref
-import com.example.whatsapp_status_saver.R
-import com.example.whatsapp_status_saver.Utils
-import com.example.whatsapp_status_saver.adapters.HomeAdapter
-import com.example.whatsapp_status_saver.databinding.FragmentHomeBinding
-import com.example.whatsapp_status_saver.model.IVModel
+import neo.whatsapp_status_saver.AppPref
+import neo.whatsapp_status_saver.Utils
+import neo.whatsapp_status_saver.adapters.VideoAdapter
+import neo.whatsapp_status_saver.model.IVModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
+import neo.whatsapp_status_saver.R
+import neo.whatsapp_status_saver.databinding.FragmentVideoBinding
 import java.io.File
 
-class HomeFragment : Fragment() {
+class VideoFragment : Fragment() {
 
-    private lateinit var binding: FragmentHomeBinding
+    private lateinit var binding: FragmentVideoBinding
     lateinit var files: Array<File>
-    private lateinit var adapter: HomeAdapter
+    private lateinit var adapter: VideoAdapter
     private lateinit var appPref: AppPref
-    private lateinit var dialog: Dialog
-    private lateinit var btnFolderPermission: Button
     private lateinit var permissionLauncher: ActivityResultLauncher<String>
     private var isReadPermissionGranted = false
     private var isWritePermissionGranted = false
+    private lateinit var dialog: Dialog
+    private lateinit var btnFolderPermission: Button
     private lateinit var job: Job
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?,
+        savedInstanceState: Bundle?
     ): View {
-        binding = FragmentHomeBinding.inflate(inflater,container,false)
+        binding = FragmentVideoBinding.inflate(inflater, container, false)
         appPref = AppPref(requireContext())
         dialog = Dialog(requireContext())
         dialog.setContentView(R.layout.folder_permission_dialog)
@@ -76,14 +76,13 @@ class HomeFragment : Fragment() {
                     val snackbar = Snackbar.make(binding.root,
                         "Storage Permission is required to store Image to the gallery",
                         Snackbar.LENGTH_LONG)
-                    snackbar.setAction("Permission Snackbar",
-                        View.OnClickListener {
-                            val intent = Intent()
-                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                            val uri = Uri.fromParts("package", requireContext().packageName, null)
-                            intent.data = uri
-                            this.startActivity(intent)
-                        })
+                    snackbar.setAction("Permission Snackbar") {
+                        val intent = Intent()
+                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        val uri = Uri.fromParts("package", requireContext().packageName, null)
+                        intent.data = uri
+                        this.startActivity(intent)
+                    }
                     snackbar.show()
                 }
             }
@@ -93,20 +92,19 @@ class HomeFragment : Fragment() {
         job = GlobalScope.launch(Dispatchers.IO){
             requestPermission()
         }
-//        fetchStatus()
 
-        binding.srlHome.setOnRefreshListener {
-//            fetchStatus()
-//            setUpLayout()
-//            adapter.updateList(getData())
-//            requestPermission()
-            Log.d("CLEAR","Home job: ${job.isActive}")
+        binding.srlVideo.setOnRefreshListener {
+//            val images = getData()
+//            images.filter { it.uri.toString().endsWith(".jpg") }
+            Log.d("CLEAR","Video job: ${job.isActive}")
             if (!job.isActive){
                 job = GlobalScope.launch(Dispatchers.IO){
                     requestPermission()
                 }
             }
-            binding.srlHome.isRefreshing = false
+//            requestPermission()
+//            adapter.updateList(images)
+            binding.srlVideo.isRefreshing = false
         }
 
         binding.btnRate.setOnClickListener {
@@ -116,27 +114,21 @@ class HomeFragment : Fragment() {
             sb2.append(requireContext().packageName)
             requireContext().startActivity(Intent(str, Uri.parse(sb2.toString())))
         }
+
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+//        requestPermission()
     }
 
     override fun onPause() {
         super.onPause()
         if (job.isActive){
             job.cancel()
-            Log.d("CLEAR","Home job canceled")
+            Log.d("CLEAR","Video job canceled")
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-//        if (!sdkCheck()){
-//            val isWritePermission = ContextCompat.checkSelfPermission(
-//                requireContext(),
-//                Manifest.permission.WRITE_EXTERNAL_STORAGE
-//            ) == PackageManager.PERMISSION_GRANTED
-//        }
-//        fetchStatus()
-//        requestPermission()
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -179,52 +171,90 @@ class HomeFragment : Fragment() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
     }
 
-
     private suspend fun fetchStatus(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             val result = readDataFromPrefs()
             if (result){
                 val uriPath = appPref.getString(AppPref.PATH)
                 requireContext().contentResolver.takePersistableUriPermission(Uri.parse(uriPath), Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                Utils.filesList.clear()
+
+                Utils.videoList.clear()
                 if (uriPath != null){
                     val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, Uri.parse(uriPath))
+                    Utils.videoList.clear()
                     for (file: DocumentFile in fileDoc!!.listFiles()){
                         if (!file.name!!.endsWith(".nomedia")){
                             val ivModel = IVModel("", file.name!!,file.uri,file.lastModified())
-                            Utils.filesList.add(ivModel)
+                            Utils.videoList.add(ivModel)
                         }
                     }
-                    Utils.filesList.sortByDescending { it.lastModified }
-                    if (Utils.filesList.size == 0){
+                    Utils.videoList = Utils.videoList.filter {
+                        it.uri.toString().endsWith(".mp4")
+                    }.toMutableList()
+                    Utils.videoList.sortByDescending { it.lastModified }
+                    if (Utils.videoList.size == 0){
                         withContext(Dispatchers.Main){
-                            binding.tvEmptyHome.visibility = View.VISIBLE
+                            binding.tvEmptyVideo.visibility = View.VISIBLE
                         }
                     }else{
                         withContext(Dispatchers.Main){
-                            binding.tvEmptyHome.visibility = View.INVISIBLE
+                            binding.tvEmptyVideo.visibility = View.INVISIBLE
                         }
                         setUpLayout()
                     }
                 }
-            }else{
+            }
+            else{
 //                getFolderPermission()
                 openDirectory()
             }
 //            getStatusAccess()
         }else{
-            Log.d("CLEAR","Q")
-            Utils.filesList.clear()
-            Utils.filesList = getData()
-            if (Utils.filesList.size == 0){
+            Utils.videoList.clear()
+            Utils.videoList = getData()
+            Utils.videoList = Utils.videoList.filter {
+                it.uri.toString().endsWith(".mp4")
+            }.toMutableList()
+            if (Utils.videoList.size == 0){
                 withContext(Dispatchers.Main){
-                    binding.tvEmptyHome.visibility = View.VISIBLE
+                    binding.tvEmptyVideo.visibility = View.VISIBLE
                 }
             }else{
                 withContext(Dispatchers.Main){
-                    binding.tvEmptyHome.visibility = View.INVISIBLE
+                    binding.tvEmptyVideo.visibility = View.INVISIBLE
                 }
                 setUpLayout()
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        dialog.dismiss()
+        if (resultCode == AppCompatActivity.RESULT_OK && resultCode == 1234){
+            val treeUri = data?.data
+            Log.d("CLEAR","path: ${treeUri.toString()}")
+            appPref.setString(AppPref.PATH,treeUri.toString())
+            if (treeUri != null){
+                requireContext().contentResolver.takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, treeUri)
+                Utils.videoList.clear()
+                for (file: DocumentFile in fileDoc!!.listFiles()){
+                    if (!file.name!!.endsWith(".nomedia")){
+                        val ivModel = IVModel("", file.name!!,file.uri,file.lastModified())
+                        Utils.videoList.add(ivModel)
+                    }
+                }
+                if (Utils.videoList.size == 0){
+                    lifecycleScope.launch {
+                        binding.tvEmptyVideo.visibility = View.VISIBLE
+                    }
+                }else{
+                    lifecycleScope.launch {
+                        binding.tvEmptyVideo.visibility = View.INVISIBLE
+                        setUpLayout()
+                    }
+                }
             }
         }
     }
@@ -251,43 +281,12 @@ class HomeFragment : Fragment() {
         finalDirPath = "$scheme%3A$startDir"
         uri = Uri.parse(finalDirPath)
         intent.putExtra("android.provider.extra.INITIAL_URI", uri)
-        Log.d("CLEAR", "uri: $uri")
+        Log.d("TAG", "uri: $uri")
         try {
             btnFolderPermission.setOnClickListener {
                 startActivityForResult(intent,1234)
             }
         } catch (ignored: ActivityNotFoundException) {
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        dialog.dismiss()
-        if (resultCode == AppCompatActivity.RESULT_OK && requestCode == 1234){
-            val treeUri = data?.data
-            Log.d("CLEAR","path: ${treeUri.toString()}")
-            appPref.setString(AppPref.PATH,treeUri.toString())
-            if (treeUri != null){
-                requireContext().contentResolver.takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, treeUri)
-                Utils.filesList.clear()
-                for (file:DocumentFile in fileDoc!!.listFiles()){
-                    if (!file.name!!.endsWith(".nomedia")){
-                        val ivModel = IVModel("", file.name!!,file.uri,file.lastModified())
-                        Utils.filesList.add(ivModel)
-                    }
-                }
-                if (Utils.filesList.size == 0){
-                    lifecycleScope.launch {
-                        binding.tvEmptyHome.visibility = View.VISIBLE
-                    }
-                }else{
-                    lifecycleScope.launch {
-                        binding.tvEmptyHome.visibility = View.INVISIBLE
-                        setUpLayout()
-                    }
-                }
-            }
         }
     }
 
@@ -328,32 +327,32 @@ class HomeFragment : Fragment() {
             emptyList<IVModel>().toMutableList()
         }else{
             files = targerdir.listFiles()
-            Utils.filesList.clear()
+            Utils.videoList.clear()
             for (i in files.indices) {
                 val file: File = files[i]
                 val ivModel = IVModel(files[i].absolutePath,file.name,Uri.fromFile(file),file.lastModified())
                 if (!ivModel.uri.toString().endsWith(".nomedia")) {
-                    Utils.filesList.add(ivModel)
+                    Utils.videoList.add(ivModel)
                 }
             }
-            Utils.filesList.sortByDescending { it.lastModified }
+            Utils.videoList.sortByDescending { it.lastModified }
 
-            Utils.filesList
+            Utils.videoList
         }
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun setUpLayout() {
         withContext(Dispatchers.Main){
-            binding.rvHome.setHasFixedSize(true)
+            binding.rvVideo.setHasFixedSize(true)
             val staggeredGridLayoutManager =
-            StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
-            binding.rvHome.layoutManager = staggeredGridLayoutManager
-            val fileList: MutableList<IVModel> = mutableListOf()
-            fileList.addAll(Utils.filesList)
-            adapter = HomeAdapter(requireContext(), fileList)
-            binding.rvHome.adapter = adapter
-            Log.d("CLEAR","image size: ${Utils.filesList.size}")
+                StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
+            binding.rvVideo.layoutManager = staggeredGridLayoutManager
+            val videoList: MutableList<IVModel> = mutableListOf()
+            videoList.addAll(Utils.videoList)
+            adapter = VideoAdapter(requireContext(), videoList)
+            binding.rvVideo.adapter = adapter
+            Log.d("CLEAR","image size: ${Utils.videoList.size}")
             if (job.isActive){
                 adapter.notifyDataSetChanged()
             }

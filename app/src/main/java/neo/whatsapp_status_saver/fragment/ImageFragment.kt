@@ -1,4 +1,4 @@
-package com.example.whatsapp_status_saver.fragment
+package neo.whatsapp_status_saver.fragment
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -14,7 +14,6 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.Settings
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,25 +25,25 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.example.whatsapp_status_saver.AppPref
-import com.example.whatsapp_status_saver.R
-import com.example.whatsapp_status_saver.Utils
-import com.example.whatsapp_status_saver.adapters.ImageAdapter
-import com.example.whatsapp_status_saver.adapters.VideoAdapter
-import com.example.whatsapp_status_saver.databinding.FragmentImageBinding
-import com.example.whatsapp_status_saver.databinding.FragmentVideoBinding
-import com.example.whatsapp_status_saver.model.IVModel
+import neo.whatsapp_status_saver.AppPref
+import neo.whatsapp_status_saver.Utils
+import neo.whatsapp_status_saver.adapters.ImageAdapter
+import neo.whatsapp_status_saver.model.IVModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
+import neo.whatsapp_status_saver.R
+import neo.whatsapp_status_saver.databinding.FragmentImageBinding
 import java.io.File
 
-class VideoFragment : Fragment() {
 
-    private lateinit var binding: FragmentVideoBinding
+class ImageFragment : Fragment() {
+
+    private lateinit var binding: FragmentImageBinding
     lateinit var files: Array<File>
-    private lateinit var adapter: VideoAdapter
+    private lateinit var adapter: ImageAdapter
     private lateinit var appPref: AppPref
     private lateinit var permissionLauncher: ActivityResultLauncher<String>
     private var isReadPermissionGranted = false
@@ -53,11 +52,12 @@ class VideoFragment : Fragment() {
     private lateinit var btnFolderPermission: Button
     private lateinit var job: Job
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
-        binding = FragmentVideoBinding.inflate(inflater, container, false)
+        binding = FragmentImageBinding.inflate(inflater, container, false)
         appPref = AppPref(requireContext())
         dialog = Dialog(requireContext())
         dialog.setContentView(R.layout.folder_permission_dialog)
@@ -77,14 +77,13 @@ class VideoFragment : Fragment() {
                     val snackbar = Snackbar.make(binding.root,
                         "Storage Permission is required to store Image to the gallery",
                         Snackbar.LENGTH_LONG)
-                    snackbar.setAction("Permission Snackbar",
-                        View.OnClickListener {
-                            val intent = Intent()
-                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                            val uri = Uri.fromParts("package", requireContext().packageName, null)
-                            intent.data = uri
-                            this.startActivity(intent)
-                        })
+                    snackbar.setAction("Permission Snackbar") {
+                        val intent = Intent()
+                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        val uri = Uri.fromParts("package", requireContext().packageName, null)
+                        intent.data = uri
+                        this.startActivity(intent)
+                    }
                     snackbar.show()
                 }
             }
@@ -95,19 +94,26 @@ class VideoFragment : Fragment() {
             requestPermission()
         }
 
-        binding.srlVideo.setOnRefreshListener {
+//        lifecycleScope.launch {
+//            requestPermission()
+//        }
+
+        binding.srlImage.setOnRefreshListener {
 //            val images = getData()
 //            images.filter { it.uri.toString().endsWith(".jpg") }
-            Log.d("CLEAR","Video job: ${job.isActive}")
+            Log.d("CLEAR","Image job: ${job.isActive}")
             if (!job.isActive){
                 job = GlobalScope.launch(Dispatchers.IO){
                     requestPermission()
                 }
             }
-//            requestPermission()
+//            lifecycleScope.launch {
+//                requestPermission()
+//            }
 //            adapter.updateList(images)
-            binding.srlVideo.isRefreshing = false
+            binding.srlImage.isRefreshing = false
         }
+
 
         binding.btnRate.setOnClickListener {
             val str = "android.intent.action.VIEW"
@@ -122,6 +128,7 @@ class VideoFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+//        fetchStatus()
 //        requestPermission()
     }
 
@@ -129,7 +136,7 @@ class VideoFragment : Fragment() {
         super.onPause()
         if (job.isActive){
             job.cancel()
-            Log.d("CLEAR","Video job canceled")
+            Log.d("CLEAR","Image job canceled")
         }
     }
 
@@ -180,27 +187,26 @@ class VideoFragment : Fragment() {
                 val uriPath = appPref.getString(AppPref.PATH)
                 requireContext().contentResolver.takePersistableUriPermission(Uri.parse(uriPath), Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
-                Utils.videoList.clear()
+                Utils.imageList.clear()
                 if (uriPath != null){
                     val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, Uri.parse(uriPath))
-                    Utils.videoList.clear()
                     for (file: DocumentFile in fileDoc!!.listFiles()){
                         if (!file.name!!.endsWith(".nomedia")){
                             val ivModel = IVModel("", file.name!!,file.uri,file.lastModified())
-                            Utils.videoList.add(ivModel)
+                            Utils.imageList.add(ivModel)
                         }
                     }
-                    Utils.videoList = Utils.videoList.filter {
-                        it.uri.toString().endsWith(".mp4")
+                    Utils.imageList = Utils.imageList.filter {
+                        it.uri.toString().endsWith(".jpg")
                     }.toMutableList()
-                    Utils.videoList.sortByDescending { it.lastModified }
-                    if (Utils.videoList.size == 0){
+                    Utils.imageList.sortByDescending { it.lastModified }
+                    if (Utils.imageList.size == 0){
                         withContext(Dispatchers.Main){
-                            binding.tvEmptyVideo.visibility = View.VISIBLE
+                            binding.tvEmptyImage.visibility = View.VISIBLE
                         }
                     }else{
                         withContext(Dispatchers.Main){
-                            binding.tvEmptyVideo.visibility = View.INVISIBLE
+                            binding.tvEmptyImage.visibility = View.INVISIBLE
                         }
                         setUpLayout()
                     }
@@ -212,18 +218,18 @@ class VideoFragment : Fragment() {
             }
 //            getStatusAccess()
         }else{
-            Utils.videoList.clear()
-            Utils.videoList = getData()
-            Utils.videoList = Utils.videoList.filter {
-                it.uri.toString().endsWith(".mp4")
+            Utils.imageList.clear()
+            Utils.imageList = getData()
+            Utils.imageList = Utils.imageList.filter {
+                it.uri.toString().endsWith(".jpg")
             }.toMutableList()
-            if (Utils.videoList.size == 0){
+            if (Utils.imageList.size == 0){
                 withContext(Dispatchers.Main){
-                    binding.tvEmptyVideo.visibility = View.VISIBLE
+                    binding.tvEmptyImage.visibility = View.VISIBLE
                 }
             }else{
                 withContext(Dispatchers.Main){
-                    binding.tvEmptyVideo.visibility = View.INVISIBLE
+                    binding.tvEmptyImage.visibility = View.INVISIBLE
                 }
                 setUpLayout()
             }
@@ -240,20 +246,20 @@ class VideoFragment : Fragment() {
             if (treeUri != null){
                 requireContext().contentResolver.takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, treeUri)
-                Utils.videoList.clear()
+                Utils.imageList.clear()
                 for (file: DocumentFile in fileDoc!!.listFiles()){
                     if (!file.name!!.endsWith(".nomedia")){
-                        val ivModel = IVModel("", file.name!!,file.uri,file.lastModified())
-                        Utils.videoList.add(ivModel)
+                        val ivModel = IVModel("", file.name!!,file.uri, file.lastModified())
+                        Utils.imageList.add(ivModel)
                     }
                 }
-                if (Utils.videoList.size == 0){
+                if (Utils.imageList.size == 0){
                     lifecycleScope.launch {
-                        binding.tvEmptyVideo.visibility = View.VISIBLE
+                        binding.tvEmptyImage.visibility = View.VISIBLE
                     }
                 }else{
                     lifecycleScope.launch {
-                        binding.tvEmptyVideo.visibility = View.INVISIBLE
+                        binding.tvEmptyImage.visibility = View.INVISIBLE
                         setUpLayout()
                     }
                 }
@@ -325,36 +331,73 @@ class VideoFragment : Fragment() {
         val targetpath =
             Environment.getExternalStorageDirectory().absolutePath + Utils.FOLDER_NAME + "Media/.Statuses"
         val targerdir = File(targetpath)
+//        if (targerdir.listFiles()?.isNotEmpty() == true){
+//            if (targerdir.listFiles().isEmpty()){
+//                return emptyList<IVModel>().toMutableList()
+//            }else{
+//                Log.d("CLEAR"," not empty")
+//                files = targerdir.listFiles()
+//                Utils.imageList.clear()
+//                for (i in files.indices) {
+//                    val file: File = files[i]
+//                    val ivModel = IVModel(files[i].absolutePath,file.name,Uri.fromFile(file))
+//                    if (!ivModel.uri.toString().endsWith(".nomedia")) {
+//                        Utils.imageList.add(ivModel)
+//                    }
+//                }
+//
+//                return Utils.imageList
+//            }
+//        }else{
+//            return emptyList<IVModel>().toMutableList()
+//        }
         return if (targerdir.listFiles() == null){
             emptyList<IVModel>().toMutableList()
         }else{
             files = targerdir.listFiles()
-            Utils.videoList.clear()
+            Utils.imageList.clear()
             for (i in files.indices) {
                 val file: File = files[i]
                 val ivModel = IVModel(files[i].absolutePath,file.name,Uri.fromFile(file),file.lastModified())
                 if (!ivModel.uri.toString().endsWith(".nomedia")) {
-                    Utils.videoList.add(ivModel)
+                    Utils.imageList.add(ivModel)
                 }
             }
-            Utils.videoList.sortByDescending { it.lastModified }
-
-            Utils.videoList
+            Utils.imageList.sortByDescending { it.lastModified }
+            Utils.imageList
         }
+//        Log.d("CLEAR","dir: ${targerdir.listFiles()}")
+//        return if (targerdir.listFiles().isEmpty()){
+//            Log.d("CLEAR","empty")
+//            return emptyList<IVModel>().toMutableList()
+//        }else{
+//            Log.d("CLEAR"," not empty")
+//            files = targerdir.listFiles()
+//            Utils.imageList.clear()
+//            for (i in files.indices) {
+//                val file: File = files[i]
+//                val ivModel = IVModel(files[i].absolutePath,file.name,Uri.fromFile(file))
+//                if (!ivModel.uri.toString().endsWith(".nomedia")) {
+//                    Utils.imageList.add(ivModel)
+//                }
+//            }
+//
+//            Utils.imageList
+//        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun setUpLayout() {
         withContext(Dispatchers.Main){
-            binding.rvVideo.setHasFixedSize(true)
+            binding.rvImage.setHasFixedSize(true)
             val staggeredGridLayoutManager =
                 StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
-            binding.rvVideo.layoutManager = staggeredGridLayoutManager
-            val videoList: MutableList<IVModel> = mutableListOf()
-            videoList.addAll(Utils.videoList)
-            adapter = VideoAdapter(requireContext(), videoList)
-            binding.rvVideo.adapter = adapter
-            Log.d("CLEAR","image size: ${Utils.videoList.size}")
+            binding.rvImage.layoutManager = staggeredGridLayoutManager
+            val imageList: MutableList<IVModel> = mutableListOf()
+            imageList.addAll(Utils.imageList)
+            adapter = ImageAdapter(requireContext(), imageList)
+            binding.rvImage.adapter = adapter
+            Log.d("CLEAR","image size: ${Utils.imageList.size}")
             if (job.isActive){
                 adapter.notifyDataSetChanged()
             }

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.whatsapp_status_saver">
+    package="neo.whatsapp_status_saver">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29"/>
 
     <application
         android:allowBackup="true"
@@ -18,13 +19,13 @@
         android:theme="@style/Theme.SplashScreen"
         tools:targetApi="31">
         <activity
-            android:name=".ImageDetailActivity"
+            android:name="neo.whatsapp_status_saver.ImageDetailActivity"
             android:exported="false" />
         <activity
-            android:name=".VideoDetailActivity"
+            android:name="neo.whatsapp_status_saver.VideoDetailActivity"
             android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name="neo.whatsapp_status_saver.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

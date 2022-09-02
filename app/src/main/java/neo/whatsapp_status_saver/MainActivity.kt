@@ -1,28 +1,22 @@
-package com.example.whatsapp_status_saver
+package neo.whatsapp_status_saver
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.storage.StorageManager
-import android.provider.DocumentsContract
 import android.provider.Settings
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.documentfile.provider.DocumentFile
-import com.example.whatsapp_status_saver.databinding.ActivityMainBinding
-import com.example.whatsapp_status_saver.fragment.ViewPagerAdapter
-import com.example.whatsapp_status_saver.model.IVModel
+import neo.whatsapp_status_saver.fragment.ViewPagerAdapter
 import com.google.android.material.snackbar.Snackbar
+import neo.whatsapp_status_saver.databinding.ActivityMainBinding
 
 
 class MainActivity : AppCompatActivity() {
@@ -34,8 +28,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appPref: AppPref
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.Theme_WhatsApp_Status_Saver)
         super.onCreate(savedInstanceState)
+        setTheme(R.style.Theme_WhatsApp_Status_Saver)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.bottomNavigationView.background = null
@@ -57,14 +51,13 @@ class MainActivity : AppCompatActivity() {
                     val snackbar = Snackbar.make(binding.root,
                         "Storage Permission is required to store Image to the gallery",
                         Snackbar.LENGTH_LONG)
-                    snackbar.setAction("Permission Snackbar",
-                        View.OnClickListener {
-                            val intent = Intent()
-                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                            val uri = Uri.fromParts("package", this.packageName, null)
-                            intent.data = uri
-                            this.startActivity(intent)
-                        })
+                    snackbar.setAction("Permission Snackbar") {
+                        val intent = Intent()
+                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        val uri = Uri.fromParts("package", this.packageName, null)
+                        intent.data = uri
+                        this.startActivity(intent)
+                    }
                     snackbar.show()
                 }
             }

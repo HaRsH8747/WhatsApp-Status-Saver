@@ -1,4 +1,4 @@
-package com.example.whatsapp_status_saver
+package neo.whatsapp_status_saver
 
 import android.Manifest
 import android.app.Activity
@@ -10,8 +10,6 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.media.MediaScannerConnection
-import android.media.MediaScannerConnection.MediaScannerConnectionClient
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -31,17 +29,15 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.example.whatsapp_status_saver.databinding.ActivityImageDetailBinding
-import com.example.whatsapp_status_saver.model.IVModel
+import neo.whatsapp_status_saver.model.IVModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.apache.commons.io.FileUtils
+import neo.whatsapp_status_saver.databinding.ActivityImageDetailBinding
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -51,10 +47,14 @@ import java.util.regex.Pattern
 
 class ImageDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityImageDetailBinding
-    private val rotateOpen: Animation by lazy { AnimationUtils.loadAnimation(this, R.anim.rotate_open_anim) }
-    private val rotateClose: Animation by lazy { AnimationUtils.loadAnimation(this,R.anim.rotate_close_anim) }
-    private val fromBottom: Animation by lazy { AnimationUtils.loadAnimation(this,R.anim.from_bottom_anim) }
-    private val toBottom: Animation by lazy { AnimationUtils.loadAnimation(this,R.anim.to_bottom_anim) }
+    private val rotateOpen: Animation by lazy { AnimationUtils.loadAnimation(this,
+        R.anim.rotate_open_anim) }
+    private val rotateClose: Animation by lazy { AnimationUtils.loadAnimation(this,
+        R.anim.rotate_close_anim) }
+    private val fromBottom: Animation by lazy { AnimationUtils.loadAnimation(this,
+        R.anim.from_bottom_anim) }
+    private val toBottom: Animation by lazy { AnimationUtils.loadAnimation(this,
+        R.anim.to_bottom_anim) }
     private var clicked = false
     private lateinit var currentPhoto: IVModel
     //    private var isReadPermissionGranted = false
@@ -99,14 +99,13 @@ class ImageDetailActivity : AppCompatActivity() {
                     val snackbar = Snackbar.make(binding.root,
                         "Storage Permission is required to store Image to the gallery",
                         Snackbar.LENGTH_LONG)
-                    snackbar.setAction("Permission Snackbar",
-                        View.OnClickListener {
-                            val intent = Intent()
-                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                            val uri = Uri.fromParts("package", this.packageName, null)
-                            intent.data = uri
-                            this.startActivity(intent)
-                        })
+                    snackbar.setAction("Permission Snackbar") {
+                        val intent = Intent()
+                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        val uri = Uri.fromParts("package", this.packageName, null)
+                        intent.data = uri
+                        this.startActivity(intent)
+                    }
                     snackbar.show()
                 }
             }
@@ -267,7 +266,7 @@ class ImageDetailActivity : AppCompatActivity() {
     private suspend fun savePhotoToInternalStorage(filename: String, bmp: Bitmap) {
         withContext(Dispatchers.IO){
             try {
-                openFileOutput("$filename.jpg", AppCompatActivity.MODE_PRIVATE).use { stream ->
+                openFileOutput("$filename.jpg", MODE_PRIVATE).use { stream ->
                     if (!bmp.compress(Bitmap.CompressFormat.PNG,100,stream)){
                         progressDialog.dismiss()
                         throw IOException("Couldn't save Image")

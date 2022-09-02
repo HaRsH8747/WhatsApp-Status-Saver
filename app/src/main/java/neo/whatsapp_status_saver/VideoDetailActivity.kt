@@ -1,4 +1,4 @@
-package com.example.whatsapp_status_saver
+package neo.whatsapp_status_saver
 
 import android.Manifest
 import android.app.Activity
@@ -6,11 +6,8 @@ import android.app.Dialog
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.media.MediaScannerConnection
-import android.media.MediaScannerConnection.MediaScannerConnectionClient
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -27,12 +24,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
-import com.example.whatsapp_status_saver.databinding.ActivityVideoDetailBinding
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.apache.commons.io.FileUtils
+import neo.whatsapp_status_saver.databinding.ActivityVideoDetailBinding
 import java.io.*
 import java.util.regex.Pattern
 
@@ -80,14 +76,13 @@ class VideoDetailActivity : AppCompatActivity() {
                     val snackbar = Snackbar.make(binding.root,
                         "Storage Permission is required to store Image to the gallery",
                         Snackbar.LENGTH_LONG)
-                    snackbar.setAction("Permission Snackbar",
-                        View.OnClickListener {
-                            val intent = Intent()
-                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                            val uri = Uri.fromParts("package", this.packageName, null)
-                            intent.data = uri
-                            this.startActivity(intent)
-                        })
+                    snackbar.setAction("Permission Snackbar") {
+                        val intent = Intent()
+                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        val uri = Uri.fromParts("package", this.packageName, null)
+                        intent.data = uri
+                        this.startActivity(intent)
+                    }
                     snackbar.show()
                 }
             }
@@ -139,8 +134,6 @@ class VideoDetailActivity : AppCompatActivity() {
 //                    }
 //                }
             }
-//            val fileList = "$currentFileList$filename:"
-            Log.d("CLEAR","favList: ${newFav}")
             appPref.setString(AppPref.FAVOURITE_ITEMS,newFav)
             if (favToggle){
                 val favImage = Utils.filesList.filter { it.fileName == filename }
@@ -153,13 +146,12 @@ class VideoDetailActivity : AppCompatActivity() {
             }
         }
 
-        binding.share.setOnClickListener(View.OnClickListener {
+        binding.share.setOnClickListener {
             lifecycleScope.launch {
                 progressDialog.show()
                 saveVideoToInternalStorage()
             }
-        })
-
+        }
 
 
         val mediaController = MediaController(this)
@@ -173,15 +165,15 @@ class VideoDetailActivity : AppCompatActivity() {
         //Glide.with(getApplicationContext()).load(uri).into(mparticularimage);
 
         //Glide.with(getApplicationContext()).load(uri).into(mparticularimage);
-        binding.download.setOnClickListener(View.OnClickListener {
-            if(sdkCheck()){
+        binding.download.setOnClickListener {
+            if (sdkCheck()) {
                 saveVideoToExternalStorage()
-            }else{
-                if (!isWritePermissionGranted){
-                    Log.d("CLEAR","No Write")
+            } else {
+                if (!isWritePermissionGranted) {
+                    Log.d("CLEAR", "No Write")
                     requestPermission()
-                }else{
-                    Log.d("CLEAR","Is Write")
+                } else {
+                    Log.d("CLEAR", "Is Write")
                     saveVideoToExternalStorage()
                 }
             }
@@ -207,7 +199,7 @@ class VideoDetailActivity : AppCompatActivity() {
 //                finish()
 //            }
 //            Toast.makeText(this,"Downloaded Successfully", Toast.LENGTH_SHORT).show()
-        })
+        }
     }
 
     private fun requestPermission(){
@@ -398,6 +390,6 @@ class VideoDetailActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         super.onBackPressed()
-        overridePendingTransition(R.anim.slide_in_left,R.anim.slide_out_right)
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
     }
 }

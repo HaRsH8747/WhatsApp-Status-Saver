@@ -1,4 +1,4 @@
-package com.example.whatsapp_status_saver.model
+package neo.whatsapp_status_saver.model
 
 import android.net.Uri
 

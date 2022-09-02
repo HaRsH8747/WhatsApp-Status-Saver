@@ -1,5 +1,6 @@
-package com.example.whatsapp_status_saver.adapters
+package neo.whatsapp_status_saver.adapters
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Environment
@@ -8,17 +9,17 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.whatsapp_status_saver.ImageDetailActivity
-import com.example.whatsapp_status_saver.R
-import com.example.whatsapp_status_saver.Utils
-import com.example.whatsapp_status_saver.VideoDetailActivity
-import com.example.whatsapp_status_saver.databinding.PhotoItemBinding
-import com.example.whatsapp_status_saver.databinding.VideoItemBinding
-import com.example.whatsapp_status_saver.model.IVModel
+import neo.whatsapp_status_saver.ImageDetailActivity
+import neo.whatsapp_status_saver.R
+import neo.whatsapp_status_saver.Utils
+import neo.whatsapp_status_saver.VideoDetailActivity
+import neo.whatsapp_status_saver.databinding.PhotoItemBinding
+import neo.whatsapp_status_saver.databinding.VideoItemBinding
+import neo.whatsapp_status_saver.model.IVModel
 
-class FavouriteAdapter(
+class VideoAdapter(
     val context: Context,
-    val filesList: MutableList<IVModel>,
+    private var filesList: MutableList<IVModel>,
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var PHOTO_ITEM = 1
@@ -41,7 +42,7 @@ class FavouriteAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        var view: View? = null
+        val view: View?
         return if (viewType == PHOTO_ITEM) {
             view = LayoutInflater.from(parent.context).inflate(R.layout.photo_item, parent, false)
             PhotoViewHolder(view)
@@ -92,4 +93,12 @@ class FavouriteAdapter(
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateList(newList: MutableList<IVModel>){
+        filesList = mutableListOf()
+        filesList.clear()
+        filesList.addAll(newList)
+//        filesList.distinct()
+        notifyDataSetChanged()
+    }
 }

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragment.FavoriteFragment">
+    tools:context="neo.whatsapp_status_saver.fragment.FavoriteFragment">
 
     <TextView
         android:id="@+id/textView"
