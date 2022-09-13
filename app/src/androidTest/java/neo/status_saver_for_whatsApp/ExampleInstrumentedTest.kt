@@ -1,4 +1,4 @@
-package neo.whatsapp_status_saver
+package neo.status_saver_for_whatsApp
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

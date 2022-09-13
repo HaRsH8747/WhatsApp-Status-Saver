@@ -5,12 +5,12 @@
     android:id="@+id/srlVideo"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="neo.whatsapp_status_saver.fragment.VideoFragment">
+    tools:context="neo.status_saver_for_whatsApp.fragment.VideoFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="neo.whatsapp_status_saver.fragment.VideoFragment">
+        tools:context="neo.status_saver_for_whatsApp.fragment.VideoFragment">
 
         <TextView
             android:id="@+id/textView"

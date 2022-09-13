@@ -1,4 +1,4 @@
-package neo.whatsapp_status_saver
+package neo.status_saver_for_whatsApp
 
 import android.Manifest
 import android.content.Intent
@@ -7,16 +7,15 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import neo.whatsapp_status_saver.fragment.ViewPagerAdapter
+import neo.status_saver_for_whatsApp.fragment.ViewPagerAdapter
 import com.google.android.material.snackbar.Snackbar
-import neo.whatsapp_status_saver.databinding.ActivityMainBinding
+import neo.status_saver_for_whatsApp.databinding.ActivityMainBinding
 
 
 class MainActivity : AppCompatActivity() {

@@ -1,4 +1,4 @@
-package neo.whatsapp_status_saver
+package neo.status_saver_for_whatsApp
 
 import android.Manifest
 import android.app.Activity
@@ -32,12 +32,12 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import neo.whatsapp_status_saver.model.IVModel
+import neo.status_saver_for_whatsApp.model.IVModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import neo.whatsapp_status_saver.databinding.ActivityImageDetailBinding
+import neo.status_saver_for_whatsApp.databinding.ActivityImageDetailBinding
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException

@@ -5,12 +5,12 @@
     android:id="@+id/srlHome"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="neo.whatsapp_status_saver.fragment.HomeFragment">
+    tools:context="neo.status_saver_for_whatsApp.fragment.HomeFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="neo.whatsapp_status_saver.fragment.HomeFragment">
+        tools:context="neo.status_saver_for_whatsApp.fragment.HomeFragment">
 
         <TextView
             android:id="@+id/textView"

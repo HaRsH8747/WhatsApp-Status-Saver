@@ -1,4 +1,4 @@
-package neo.whatsapp_status_saver.fragment
+package neo.status_saver_for_whatsApp.fragment
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -28,14 +28,14 @@ import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import neo.whatsapp_status_saver.AppPref
-import neo.whatsapp_status_saver.Utils
-import neo.whatsapp_status_saver.adapters.VideoAdapter
-import neo.whatsapp_status_saver.model.IVModel
+import neo.status_saver_for_whatsApp.AppPref
+import neo.status_saver_for_whatsApp.Utils
+import neo.status_saver_for_whatsApp.adapters.VideoAdapter
+import neo.status_saver_for_whatsApp.model.IVModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
-import neo.whatsapp_status_saver.R
-import neo.whatsapp_status_saver.databinding.FragmentVideoBinding
+import neo.status_saver_for_whatsApp.R
+import neo.status_saver_for_whatsApp.databinding.FragmentVideoBinding
 import java.io.File
 
 class VideoFragment : Fragment() {

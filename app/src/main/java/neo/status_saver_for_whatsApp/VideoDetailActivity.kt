@@ -1,4 +1,4 @@
-package neo.whatsapp_status_saver
+package neo.status_saver_for_whatsApp
 
 import android.Manifest
 import android.app.Activity
@@ -15,7 +15,6 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
-import android.view.View
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,7 +27,7 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import neo.whatsapp_status_saver.databinding.ActivityVideoDetailBinding
+import neo.status_saver_for_whatsApp.databinding.ActivityVideoDetailBinding
 import java.io.*
 import java.util.regex.Pattern
 

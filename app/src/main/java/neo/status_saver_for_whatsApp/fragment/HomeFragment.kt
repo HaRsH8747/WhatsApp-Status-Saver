@@ -1,4 +1,4 @@
-package neo.whatsapp_status_saver.fragment
+package neo.status_saver_for_whatsApp.fragment
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -28,28 +28,27 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import neo.whatsapp_status_saver.AppPref
-import neo.whatsapp_status_saver.Utils
-import neo.whatsapp_status_saver.adapters.ImageAdapter
-import neo.whatsapp_status_saver.model.IVModel
+import neo.status_saver_for_whatsApp.AppPref
+import neo.status_saver_for_whatsApp.Utils
+import neo.status_saver_for_whatsApp.adapters.HomeAdapter
+import neo.status_saver_for_whatsApp.model.IVModel
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
-import neo.whatsapp_status_saver.R
-import neo.whatsapp_status_saver.databinding.FragmentImageBinding
+import neo.status_saver_for_whatsApp.R
+import neo.status_saver_for_whatsApp.databinding.FragmentHomeBinding
 import java.io.File
 
+class HomeFragment : Fragment() {
 
-class ImageFragment : Fragment() {
-
-    private lateinit var binding: FragmentImageBinding
+    private lateinit var binding: FragmentHomeBinding
     lateinit var files: Array<File>
-    private lateinit var adapter: ImageAdapter
+    private lateinit var adapter: HomeAdapter
     private lateinit var appPref: AppPref
+    private lateinit var dialog: Dialog
+    private lateinit var btnFolderPermission: Button
     private lateinit var permissionLauncher: ActivityResultLauncher<String>
     private var isReadPermissionGranted = false
     private var isWritePermissionGranted = false
-    private lateinit var dialog: Dialog
-    private lateinit var btnFolderPermission: Button
     private lateinit var job: Job
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -57,7 +56,7 @@ class ImageFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        binding = FragmentImageBinding.inflate(inflater, container, false)
+        binding = FragmentHomeBinding.inflate(inflater,container,false)
         appPref = AppPref(requireContext())
         dialog = Dialog(requireContext())
         dialog.setContentView(R.layout.folder_permission_dialog)
@@ -93,27 +92,21 @@ class ImageFragment : Fragment() {
         job = GlobalScope.launch(Dispatchers.IO){
             requestPermission()
         }
+//        fetchStatus()
 
-//        lifecycleScope.launch {
+        binding.srlHome.setOnRefreshListener {
+//            fetchStatus()
+//            setUpLayout()
+//            adapter.updateList(getData())
 //            requestPermission()
-//        }
-
-        binding.srlImage.setOnRefreshListener {
-//            val images = getData()
-//            images.filter { it.uri.toString().endsWith(".jpg") }
-            Log.d("CLEAR","Image job: ${job.isActive}")
+            Log.d("CLEAR","Home job: ${job.isActive}")
             if (!job.isActive){
                 job = GlobalScope.launch(Dispatchers.IO){
                     requestPermission()
                 }
             }
-//            lifecycleScope.launch {
-//                requestPermission()
-//            }
-//            adapter.updateList(images)
-            binding.srlImage.isRefreshing = false
+            binding.srlHome.isRefreshing = false
         }
-
 
         binding.btnRate.setOnClickListener {
             val str = "android.intent.action.VIEW"
@@ -122,22 +115,27 @@ class ImageFragment : Fragment() {
             sb2.append(requireContext().packageName)
             requireContext().startActivity(Intent(str, Uri.parse(sb2.toString())))
         }
-
         return binding.root
-    }
-
-    override fun onResume() {
-        super.onResume()
-//        fetchStatus()
-//        requestPermission()
     }
 
     override fun onPause() {
         super.onPause()
         if (job.isActive){
             job.cancel()
-            Log.d("CLEAR","Image job canceled")
+            Log.d("CLEAR","Home job canceled")
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+//        if (!sdkCheck()){
+//            val isWritePermission = ContextCompat.checkSelfPermission(
+//                requireContext(),
+//                Manifest.permission.WRITE_EXTERNAL_STORAGE
+//            ) == PackageManager.PERMISSION_GRANTED
+//        }
+//        fetchStatus()
+//        requestPermission()
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -180,89 +178,52 @@ class ImageFragment : Fragment() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
     }
 
+
     private suspend fun fetchStatus(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             val result = readDataFromPrefs()
             if (result){
                 val uriPath = appPref.getString(AppPref.PATH)
                 requireContext().contentResolver.takePersistableUriPermission(Uri.parse(uriPath), Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-                Utils.imageList.clear()
+                Utils.filesList.clear()
                 if (uriPath != null){
                     val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, Uri.parse(uriPath))
                     for (file: DocumentFile in fileDoc!!.listFiles()){
                         if (!file.name!!.endsWith(".nomedia")){
                             val ivModel = IVModel("", file.name!!,file.uri,file.lastModified())
-                            Utils.imageList.add(ivModel)
+                            Utils.filesList.add(ivModel)
                         }
                     }
-                    Utils.imageList = Utils.imageList.filter {
-                        it.uri.toString().endsWith(".jpg")
-                    }.toMutableList()
-                    Utils.imageList.sortByDescending { it.lastModified }
-                    if (Utils.imageList.size == 0){
+                    Utils.filesList.sortByDescending { it.lastModified }
+                    if (Utils.filesList.size == 0){
                         withContext(Dispatchers.Main){
-                            binding.tvEmptyImage.visibility = View.VISIBLE
+                            binding.tvEmptyHome.visibility = View.VISIBLE
                         }
                     }else{
                         withContext(Dispatchers.Main){
-                            binding.tvEmptyImage.visibility = View.INVISIBLE
+                            binding.tvEmptyHome.visibility = View.INVISIBLE
                         }
                         setUpLayout()
                     }
                 }
-            }
-            else{
+            }else{
 //                getFolderPermission()
                 openDirectory()
             }
 //            getStatusAccess()
         }else{
-            Utils.imageList.clear()
-            Utils.imageList = getData()
-            Utils.imageList = Utils.imageList.filter {
-                it.uri.toString().endsWith(".jpg")
-            }.toMutableList()
-            if (Utils.imageList.size == 0){
+            Log.d("CLEAR","Q")
+            Utils.filesList.clear()
+            Utils.filesList = getData()
+            if (Utils.filesList.size == 0){
                 withContext(Dispatchers.Main){
-                    binding.tvEmptyImage.visibility = View.VISIBLE
+                    binding.tvEmptyHome.visibility = View.VISIBLE
                 }
             }else{
                 withContext(Dispatchers.Main){
-                    binding.tvEmptyImage.visibility = View.INVISIBLE
+                    binding.tvEmptyHome.visibility = View.INVISIBLE
                 }
                 setUpLayout()
-            }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        dialog.dismiss()
-        if (resultCode == AppCompatActivity.RESULT_OK && resultCode == 1234){
-            val treeUri = data?.data
-            Log.d("CLEAR","path: ${treeUri.toString()}")
-            appPref.setString(AppPref.PATH,treeUri.toString())
-            if (treeUri != null){
-                requireContext().contentResolver.takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, treeUri)
-                Utils.imageList.clear()
-                for (file: DocumentFile in fileDoc!!.listFiles()){
-                    if (!file.name!!.endsWith(".nomedia")){
-                        val ivModel = IVModel("", file.name!!,file.uri, file.lastModified())
-                        Utils.imageList.add(ivModel)
-                    }
-                }
-                if (Utils.imageList.size == 0){
-                    lifecycleScope.launch {
-                        binding.tvEmptyImage.visibility = View.VISIBLE
-                    }
-                }else{
-                    lifecycleScope.launch {
-                        binding.tvEmptyImage.visibility = View.INVISIBLE
-                        setUpLayout()
-                    }
-                }
             }
         }
     }
@@ -289,12 +250,43 @@ class ImageFragment : Fragment() {
         finalDirPath = "$scheme%3A$startDir"
         uri = Uri.parse(finalDirPath)
         intent.putExtra("android.provider.extra.INITIAL_URI", uri)
-        Log.d("TAG", "uri: $uri")
+        Log.d("CLEAR", "uri: $uri")
         try {
             btnFolderPermission.setOnClickListener {
                 startActivityForResult(intent,1234)
             }
         } catch (ignored: ActivityNotFoundException) {
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        dialog.dismiss()
+        if (resultCode == AppCompatActivity.RESULT_OK && requestCode == 1234){
+            val treeUri = data?.data
+            Log.d("CLEAR","path: ${treeUri.toString()}")
+            appPref.setString(AppPref.PATH,treeUri.toString())
+            if (treeUri != null){
+                requireContext().contentResolver.takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                val fileDoc = DocumentFile.fromTreeUri(requireContext().applicationContext, treeUri)
+                Utils.filesList.clear()
+                for (file:DocumentFile in fileDoc!!.listFiles()){
+                    if (!file.name!!.endsWith(".nomedia")){
+                        val ivModel = IVModel("", file.name!!,file.uri,file.lastModified())
+                        Utils.filesList.add(ivModel)
+                    }
+                }
+                if (Utils.filesList.size == 0){
+                    lifecycleScope.launch {
+                        binding.tvEmptyHome.visibility = View.VISIBLE
+                    }
+                }else{
+                    lifecycleScope.launch {
+                        binding.tvEmptyHome.visibility = View.INVISIBLE
+                        setUpLayout()
+                    }
+                }
+            }
         }
     }
 
@@ -331,73 +323,36 @@ class ImageFragment : Fragment() {
         val targetpath =
             Environment.getExternalStorageDirectory().absolutePath + Utils.FOLDER_NAME + "Media/.Statuses"
         val targerdir = File(targetpath)
-//        if (targerdir.listFiles()?.isNotEmpty() == true){
-//            if (targerdir.listFiles().isEmpty()){
-//                return emptyList<IVModel>().toMutableList()
-//            }else{
-//                Log.d("CLEAR"," not empty")
-//                files = targerdir.listFiles()
-//                Utils.imageList.clear()
-//                for (i in files.indices) {
-//                    val file: File = files[i]
-//                    val ivModel = IVModel(files[i].absolutePath,file.name,Uri.fromFile(file))
-//                    if (!ivModel.uri.toString().endsWith(".nomedia")) {
-//                        Utils.imageList.add(ivModel)
-//                    }
-//                }
-//
-//                return Utils.imageList
-//            }
-//        }else{
-//            return emptyList<IVModel>().toMutableList()
-//        }
         return if (targerdir.listFiles() == null){
             emptyList<IVModel>().toMutableList()
         }else{
             files = targerdir.listFiles()
-            Utils.imageList.clear()
+            Utils.filesList.clear()
             for (i in files.indices) {
                 val file: File = files[i]
                 val ivModel = IVModel(files[i].absolutePath,file.name,Uri.fromFile(file),file.lastModified())
                 if (!ivModel.uri.toString().endsWith(".nomedia")) {
-                    Utils.imageList.add(ivModel)
+                    Utils.filesList.add(ivModel)
                 }
             }
-            Utils.imageList.sortByDescending { it.lastModified }
-            Utils.imageList
+            Utils.filesList.sortByDescending { it.lastModified }
+
+            Utils.filesList
         }
-//        Log.d("CLEAR","dir: ${targerdir.listFiles()}")
-//        return if (targerdir.listFiles().isEmpty()){
-//            Log.d("CLEAR","empty")
-//            return emptyList<IVModel>().toMutableList()
-//        }else{
-//            Log.d("CLEAR"," not empty")
-//            files = targerdir.listFiles()
-//            Utils.imageList.clear()
-//            for (i in files.indices) {
-//                val file: File = files[i]
-//                val ivModel = IVModel(files[i].absolutePath,file.name,Uri.fromFile(file))
-//                if (!ivModel.uri.toString().endsWith(".nomedia")) {
-//                    Utils.imageList.add(ivModel)
-//                }
-//            }
-//
-//            Utils.imageList
-//        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private suspend fun setUpLayout() {
         withContext(Dispatchers.Main){
-            binding.rvImage.setHasFixedSize(true)
+            binding.rvHome.setHasFixedSize(true)
             val staggeredGridLayoutManager =
-                StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
-            binding.rvImage.layoutManager = staggeredGridLayoutManager
-            val imageList: MutableList<IVModel> = mutableListOf()
-            imageList.addAll(Utils.imageList)
-            adapter = ImageAdapter(requireContext(), imageList)
-            binding.rvImage.adapter = adapter
-            Log.d("CLEAR","image size: ${Utils.imageList.size}")
+            StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
+            binding.rvHome.layoutManager = staggeredGridLayoutManager
+            val fileList: MutableList<IVModel> = mutableListOf()
+            fileList.addAll(Utils.filesList)
+            adapter = HomeAdapter(requireContext(), fileList)
+            binding.rvHome.adapter = adapter
+            Log.d("CLEAR","image size: ${Utils.filesList.size}")
             if (job.isActive){
                 adapter.notifyDataSetChanged()
             }

@@ -1,4 +1,4 @@
-package neo.whatsapp_status_saver.fragment
+package neo.status_saver_for_whatsApp.fragment
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -9,11 +9,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import neo.whatsapp_status_saver.AppPref
-import neo.whatsapp_status_saver.Utils
-import neo.whatsapp_status_saver.adapters.FavouriteAdapter
-import neo.whatsapp_status_saver.databinding.FragmentFavoriteBinding
-import neo.whatsapp_status_saver.model.IVModel
+import neo.status_saver_for_whatsApp.AppPref
+import neo.status_saver_for_whatsApp.Utils
+import neo.status_saver_for_whatsApp.adapters.FavouriteAdapter
+import neo.status_saver_for_whatsApp.databinding.FragmentFavoriteBinding
+import neo.status_saver_for_whatsApp.model.IVModel
 import java.util.regex.Pattern
 
 class FavoriteFragment : Fragment() {

@@ -1,4 +1,4 @@
-package neo.whatsapp_status_saver.fragment
+package neo.status_saver_for_whatsApp.fragment
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager

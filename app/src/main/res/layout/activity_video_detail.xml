@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/main_bg"
-    tools:context="neo.whatsapp_status_saver.VideoDetailActivity">
+    tools:context="neo.status_saver_for_whatsApp.VideoDetailActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout"

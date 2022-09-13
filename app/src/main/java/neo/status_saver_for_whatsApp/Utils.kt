@@ -1,6 +1,6 @@
-package neo.whatsapp_status_saver
+package neo.status_saver_for_whatsApp
 
-import neo.whatsapp_status_saver.model.IVModel
+import neo.status_saver_for_whatsApp.model.IVModel
 
 class Utils {
 

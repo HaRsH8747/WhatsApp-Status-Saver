@@ -1,5 +1,6 @@
-package neo.whatsapp_status_saver.adapters
+package neo.status_saver_for_whatsApp.adapters
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Environment
@@ -8,17 +9,17 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import neo.whatsapp_status_saver.ImageDetailActivity
-import neo.whatsapp_status_saver.R
-import neo.whatsapp_status_saver.Utils
-import neo.whatsapp_status_saver.VideoDetailActivity
-import neo.whatsapp_status_saver.databinding.PhotoItemBinding
-import neo.whatsapp_status_saver.databinding.VideoItemBinding
-import neo.whatsapp_status_saver.model.IVModel
+import neo.status_saver_for_whatsApp.ImageDetailActivity
+import neo.status_saver_for_whatsApp.R
+import neo.status_saver_for_whatsApp.Utils
+import neo.status_saver_for_whatsApp.VideoDetailActivity
+import neo.status_saver_for_whatsApp.databinding.PhotoItemBinding
+import neo.status_saver_for_whatsApp.databinding.VideoItemBinding
+import neo.status_saver_for_whatsApp.model.IVModel
 
-class FavouriteAdapter(
+class VideoAdapter(
     val context: Context,
-    val filesList: MutableList<IVModel>,
+    private var filesList: MutableList<IVModel>,
 ): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var PHOTO_ITEM = 1
@@ -92,4 +93,12 @@ class FavouriteAdapter(
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateList(newList: MutableList<IVModel>){
+        filesList = mutableListOf()
+        filesList.clear()
+        filesList.addAll(newList)
+//        filesList.distinct()
+        notifyDataSetChanged()
+    }
 }
